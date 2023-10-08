@@ -3,6 +3,6 @@
 ## 安装
 在安装前请注意，若你的设备默认桌面包名为**com.android.launcher3**，请**不要安装**！否则后果自负。  
   
-[此处查看下载](/releases)
+[此处查看下载](https://github.com/fR0Z863xF/FuuleaEnvEmu/releases)
 ## 原理
 模拟管控环境包名及其广播api
