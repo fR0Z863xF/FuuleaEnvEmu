@@ -4,11 +4,14 @@ import static android.preference.PreferenceManager.getDefaultSharedPreferences;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import java.util.Locale;
 
@@ -55,5 +58,21 @@ public class MainActivity extends AppCompatActivity {
         editor.putString("acc", accc.getText().toString());
         editor.apply();
 
+        Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show();
+
+    }
+    public void startFu(View view) {
+
+        try {
+            String package_name = "com.fuulea.venus.g";
+            PackageManager packageManager = this.getPackageManager();
+            Intent it = packageManager.getLaunchIntentForPackage(package_name);
+            startActivity(it);
+            Log.i("Main","Start fuuleaHD");
+        } catch (Exception e) {
+            Toast.makeText(this, "启动失败！", Toast.LENGTH_SHORT).show();
+            Log.e("Main","Fail to start fuuleaHD!");
+
+        }
     }
 }
