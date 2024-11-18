@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
             intent.addCategory(Intent.CATEGORY_LAUNCHER);
 
             ComponentName componentName = new ComponentName(
-                    "com.fuulea.venus",
+                    "com.fuulea.venus.g",
                     "com.fuulea.venus.MainActivity"
             );
 
