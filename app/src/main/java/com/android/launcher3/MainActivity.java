@@ -4,6 +4,7 @@ import static android.preference.PreferenceManager.getDefaultSharedPreferences;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -64,13 +65,27 @@ public class MainActivity extends AppCompatActivity {
     public void startFu(View view) {
 
         try {
-            String package_name = "com.fuulea.venus.g";
-            PackageManager packageManager = this.getPackageManager();
-            Intent it = packageManager.getLaunchIntentForPackage(package_name);
-            startActivity(it);
-            Log.i("Main","Start fuuleaHD");
+//            String package_name = "com.fuulea.venus.g";
+//            PackageManager packageManager = this.getPackageManager();
+//            Intent it = packageManager.getLaunchIntentForPackage(package_name);
+//            startActivity(it);
+//            Log.i("Main","Start fuuleaHD");
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+            ComponentName componentName = new ComponentName(
+                    "com.fuulea.venus",
+                    "com.fuulea.venus.MainActivity"
+            );
+
+            intent.setComponent(componentName);
+
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+
+            startActivity(intent);
         } catch (Exception e) {
-            Toast.makeText(this, "启动失败！", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "请手动启动辅立码课", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
             Log.e("Main","Fail to start fuuleaHD!");
 
         }
