@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.fr0z863xf.FuEmu"
-        minSdk = 29
+        minSdk = 31
         targetSdk = 36
         versionCode = 6
         versionName = "2.0.5"

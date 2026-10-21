@@ -6,7 +6,6 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.net.http.X509TrustManagerExtensions;
 import android.os.Build;
@@ -51,7 +50,6 @@ import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
-import de.robv.android.xposed.XSharedPreferences;
 
 /**
  * 3.x 壳: 百度加固 sagittarius v6 (libbaiduprotect.so), application = com.sagittarius.v6.StubApplication。
@@ -65,34 +63,14 @@ import de.robv.android.xposed.XSharedPreferences;
 public class MainHook implements IXposedHookLoadPackage {
     private static final String REAL_MAIN_ACTIVITY = "com.fuulea.venus.MainActivity";
 
-    private SharedPreferences prefs;
+    private prefsUtils prefs;
     private Application mApplication;
     private final AtomicBoolean installed = new AtomicBoolean(false);
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable  {
-        if (Objects.equals(lpparam.packageName, "com.fr0z863xf.FuEmu")) {
-            try {
-                Class<?> moduleStatus = XposedHelpers.findClass("com.fr0z863xf.FuEmu.ModuleStatus", lpparam.classLoader);
-                XposedHelpers.setStaticBooleanField(moduleStatus, "isActive", true);
-            } catch (Throwable t) {
-                XposedBridge.log("[FuEmu] 设置模块激活标记失败: " + t);
-            }
-            return;
-        }
-
         if (!Objects.equals(lpparam.packageName, "com.fuulea.venus.g")) return;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            XSharedPreferences xPrefs = new XSharedPreferences("com.fr0z863xf.FuEmu", "FuEmuPrefs");
-            try {
-                xPrefs.reload();
-            } catch (Throwable t) {
-                XposedBridge.log("[FuEmu] XSharedPreferences reload 失败: " + t);
-            }
-            this.prefs = xPrefs;
-        } else {
-            this.prefs = new prefsUtils();
-        }
+        this.prefs = new prefsUtils();
 
         //2.x的壳
         try {
