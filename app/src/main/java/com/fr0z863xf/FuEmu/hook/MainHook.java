@@ -51,15 +51,6 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
-/**
- * 3.x 壳: 百度加固 sagittarius v6 (libbaiduprotect.so), application = com.sagittarius.v6.StubApplication。
- *   穿壳时机(dexsql 静态验证): StubApplication.attachBaseContext 内完成
- *   A.n1 native 解密 -> b/p.a 反射 DexPathList.makeInMemoryDexElements 把解密 dex 追加进
- *   当前 PathClassLoader 的 dexElements(不创建新 loader) -> AppInfo.APPNAME 回填 ->
- *   b/g.a(String) Class.forName 创建真实 MainApplication -> b/f 回调链替换
- *   LoadedApk.mApplication/mInitialApplication。
- *   因此 attachBaseContext 的 afterHook 时刻真实类即可解析, 且早于真实 Application.onCreate。
- */
 public class MainHook implements IXposedHookLoadPackage {
     private static final String REAL_MAIN_ACTIVITY = "com.fuulea.venus.MainActivity";
 
@@ -90,18 +81,21 @@ public class MainHook implements IXposedHookLoadPackage {
 
         // 3.x壳
         try {
-            XposedHelpers.findAndHookMethod("com.sagittarius.v6.StubApplication", lpparam.classLoader, "attachBaseContext", Context.class, new XC_MethodHook() {
+            XposedHelpers.findAndHookMethod("com.sagittarius.v6.b.g", lpparam.classLoader, "a", String.class, new XC_MethodHook() {
                 @Override
-                protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    super.afterHookedMethod(param);
+                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    super.beforeHookedMethod(param);
                     XposedBridge.log("[FuEmu]app已加载，开始hook外壳");
-                    XposedBridge.log("[FuEmu]com.sagittarius.v6.StubApplication->afterHookedMethod->attachBaseContext: " + param.thisObject);
-                    XposedBridge.log("[FuEmu]com.sagittarius.v6.StubApplication: " + lpparam.classLoader);
-                    installHooks(getClassloader());
+                    XposedBridge.log("[FuEmu]com.sagittarius.v6.b.g->beforeHookedMethod->a(String): " + param.args[0]);
+                    try {
+                        installHooks(lpparam.classLoader);
+                    } catch (Throwable t) {
+                        XposedBridge.log("[FuEmu] b.g.a(String) 入口装钩失败: " + t);
+                    }
                 }
             });
         } catch (Throwable t) {
-            XposedBridge.log("[FuEmu] 未找到3.x壳入口 com.sagittarius.v6.StubApplication: " + t);
+            XposedBridge.log("[FuEmu] 未找到3.x壳入口 b.g.a(String): " + t);
         }
     }
 
