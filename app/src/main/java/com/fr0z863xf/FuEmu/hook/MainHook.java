@@ -63,6 +63,51 @@ public class MainHook implements IXposedHookLoadPackage {
         if (!Objects.equals(lpparam.packageName, "com.fuulea.venus.g")) return;
         this.prefs = new prefsUtils();
 
+        // 3.x
+        try {
+            XposedHelpers.findAndHookMethod("com.sagittarius.m1.a", lpparam.classLoader, "a", String.class, JSONObject.class, new XC_MethodReplacement() {
+                @Override
+                protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+                    XposedBridge.log("[FuEmu]拦截壳配置请求: " + param.args[0]);
+                    return 200;
+                }
+            });
+            XposedHelpers.findAndHookMethod("com.sagittarius.m1.a", lpparam.classLoader, "b", new XC_MethodReplacement() {
+                @Override
+                protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+                    XposedBridge.log("[FuEmu]拦截壳崩溃处理器注册");
+                    return null;
+                }
+            });
+            XposedHelpers.findAndHookMethod("com.sagittarius.m1.a", lpparam.classLoader, "c", new XC_MethodReplacement() {
+                @Override
+                protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+                    XposedBridge.log("[FuEmu]拦截壳遥测线程");
+                    return null;
+                }
+            });
+            XposedHelpers.findAndHookMethod("com.sagittarius.m1.A", lpparam.classLoader, "a", new XC_MethodReplacement() {
+                @Override
+                protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+                    return null;
+                }
+            });
+            XposedHelpers.findAndHookMethod("com.sagittarius.m1.A", lpparam.classLoader, "b", String.class, new XC_MethodReplacement() {
+                @Override
+                protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+                    XposedBridge.log("[FuEmu]拦截壳崩溃上报");
+                    return null;
+                }
+            });
+            XposedHelpers.findAndHookMethod("com.sagittarius.m1.A", lpparam.classLoader, "j", new XC_MethodReplacement() {
+                @Override
+                protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+                    return null;
+                }
+            });
+        } catch (Throwable t) {
+            XposedBridge.log("[FuEmu]3.x壳拦截hook失败(2.x?): " + t);
+        }
         //2.x的壳
         try {
             XposedHelpers.findAndHookMethod("com.stub.StubApp", lpparam.classLoader, "onCreate", new XC_MethodHook() {
@@ -308,7 +353,7 @@ public class MainHook implements IXposedHookLoadPackage {
         } catch (Throwable t) {
             XposedBridge.log("[FuEmu] 3.x SN hooks 失败: " + t);
         }
-
+        banBaiduTelemetry(finalClassLoader);
         //绕过证书验证，方便抓包
 //                try {
 //                    XposedHelpers.findAndHookMethod("javax.net.ssl.X509TrustManager",finalClassLoader, "checkServerTrusted", java.security.cert.X509Certificate[].class, String.class, new XC_MethodHook() {
@@ -625,6 +670,58 @@ public class MainHook implements IXposedHookLoadPackage {
 
     }
 
+    private void banBaiduTelemetry(final ClassLoader finalClassLoader) {
+        try {
+            installBaiduTelemetryHooks(finalClassLoader);
+            XposedBridge.log("[FuEmu]拦截壳遥测");
+        } catch (Throwable t) {
+            XposedBridge.log("[FuEmu]遥测拦截失败: " + t);
+            Thread retry = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    for (int i = 0; i < 30; i++) {
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                            return;
+                        }
+                        try {
+                            installBaiduTelemetryHooks(finalClassLoader);
+                            XposedBridge.log("[FuEmu]遥测延迟拦截成功(第" + (i + 1) + "次重试)");
+                            return;
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                }
+            });
+            retry.setDaemon(true);
+            retry.setName("FuEmu-BaiduTelemetryBan");
+            retry.start();
+        }
+    }
+
+    private static void installBaiduTelemetryHooks(ClassLoader cl) throws Throwable {
+        final Class<?> otaResult = XposedHelpers.findClass("ab.yu.yu.Hx.a$a", cl);
+        XposedBridge.hookAllMethods(XposedHelpers.findClass("ab.yu.yu.Hx.a", cl), "a", new XC_MethodReplacement() {
+            @Override
+            protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+                XposedBridge.log("[FuEmu]拦截ota.baidu.com: " + (param.args.length > 2 ? param.args[2] : param.args[0]));
+                return XposedHelpers.newInstance(otaResult, "", -1);
+            }
+        });
+        XposedHelpers.findAndHookMethod(XposedHelpers.findClass("yu.yu.yu.Hx.c", cl), "a", int.class, String.class, new XC_MethodReplacement() {
+            @Override
+            protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+                Object host = null;
+                try {
+                    host = XposedHelpers.getObjectField(param.thisObject, "i");
+                } catch (Throwable ignored) {
+                }
+                XposedBridge.log("[FuEmu]拦截reportlib HTTP上报, host=" + host);
+                return 0;
+            }
+        });
+    }
     private void hookRNLoader(ClassLoader finalClassLoader) {
         // 2.x only
         try {
